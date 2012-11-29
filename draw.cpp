@@ -63,8 +63,7 @@ void Draw::drawSky(){
 	for (int i = 0; i < 150; i++){
 		x[i] = rand()%width;
 		y[i] = rand()%height;
-
-		glVertex2f(x[i],y[i]);
+		glVertex3f(x[i],y[i],0.0);
 	}
 	glEnd();
 }

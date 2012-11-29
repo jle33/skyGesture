@@ -17,12 +17,10 @@ int main( int argc, char* args[] )
 	cout << "Enter file name: "<< endl;
 	cin >> input;
 	myfile.open (input);
-	if (myfile.is_open())
-	{
-		while ( myfile.good() )
-		{
-			getline(myfile,buffer);
-			cout << buffer << endl;
+	if (myfile.is_open()){
+		while ( myfile.good() ){
+		//	getline(myfile,buffer);
+			//cout << buffer << endl;
 		}
 		myfile.close();
 	}
