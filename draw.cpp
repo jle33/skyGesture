@@ -56,6 +56,7 @@ void Draw::setupGL(){
 void Draw::drawSky(){
 	float x[150];
 	float y[150];
+	float z[150];
 	srand(54654);
 
 	glBegin(GL_POINTS);
@@ -63,7 +64,8 @@ void Draw::drawSky(){
 	for (int i = 0; i < 150; i++){
 		x[i] = rand()%width;
 		y[i] = rand()%height;
-		glVertex3f(x[i],y[i],0.0);
+		z[i] = rand()%2;
+		glVertex3f(x[i],y[i],z[i]);
 	}
 	glEnd();
 }
