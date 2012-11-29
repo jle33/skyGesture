@@ -5,10 +5,6 @@
 class Draw{
 public:
 	enum Type{
-		line,
-		triangle,
-		square,
-		better,
 		sky
 	};
 
@@ -19,10 +15,6 @@ public:
 private:
 	void setupWindow();
 	void setupGL();
-	void drawLine();
-	void drawTriangle();
-	void drawSquare();
-	void drawBetterSquare();
 	void drawSky();
 
 private:
