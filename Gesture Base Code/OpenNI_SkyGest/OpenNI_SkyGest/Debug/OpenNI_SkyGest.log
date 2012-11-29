@@ -1,0 +1,24 @@
+﻿Build started 11/29/2012 12:47:23 PM.
+     1>Project "C:\Users\jle33\Documents\Visual Studio 2010\Projects\OpenNI_SkyGest\OpenNI_SkyGest\OpenNI_SkyGest.vcxproj" on node 2 (build target(s)).
+     1>InitializeBuildStatus:
+         Creating "Debug\OpenNI_SkyGest.unsuccessfulbuild" because "AlwaysCreate" was specified.
+       ClCompile:
+         c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /I"C:\Users\jle33\Documents\Visual Studio 2010\Projects\OpenNI_SkyGest\OpenNI_SkyGest" /I"C:\Program Files (x86)\OpenNI\Include" /ZI /nologo /W3 /WX- /Od /Oy- /D _MBCS /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt main.cpp
+         main.cpp
+       Link:
+         c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\jle33\Documents\Visual Studio 2010\Projects\OpenNI_SkyGest\Debug\OpenNI_SkyGest.exe" /NOLOGO /LIBPATH:C:\Windows\System32 /LIBPATH:"C:\Users\jle33\Documents\Visual Studio 2010\Projects\OpenNI_SkyGest\OpenNI_SkyGest\Release" /LIBPATH:"C:\Users\jle33\Documents\Visual Studio 2010\Projects\OpenNI_SkyGest\OpenNI_SkyGest\Libs" /LIBPATH:"C:\Program Files (x86)\OpenNI\Lib" OpenNI.lib openNI.lib glut32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"Debug\OpenNI_SkyGest.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"C:\Users\jle33\Documents\Visual Studio 2010\Projects\OpenNI_SkyGest\Debug\OpenNI_SkyGest.pdb" /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\jle33\Documents\Visual Studio 2010\Projects\OpenNI_SkyGest\Debug\OpenNI_SkyGest.lib" /MACHINE:X86 Debug\main.obj
+         Debug\NiHandTracker.obj
+         Debug\NiHandViewer.obj
+         Debug\NiSimpleViewer.obj
+         LINK : C:\Users\jle33\Documents\Visual Studio 2010\Projects\OpenNI_SkyGest\Debug\OpenNI_SkyGest.exe not found or not built by the last incremental link; performing full link
+         OpenNI_SkyGest.vcxproj -> C:\Users\jle33\Documents\Visual Studio 2010\Projects\OpenNI_SkyGest\Debug\OpenNI_SkyGest.exe
+       Manifest:
+         c:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /outputresource:"C:\Users\jle33\Documents\Visual Studio 2010\Projects\OpenNI_SkyGest\Debug\OpenNI_SkyGest.exe;#1" /manifest Debug\OpenNI_SkyGest.exe.intermediate.manifest
+       FinalizeBuildStatus:
+         Deleting file "Debug\OpenNI_SkyGest.unsuccessfulbuild".
+         Touching "Debug\OpenNI_SkyGest.lastbuildstate".
+     1>Done Building Project "C:\Users\jle33\Documents\Visual Studio 2010\Projects\OpenNI_SkyGest\OpenNI_SkyGest\OpenNI_SkyGest.vcxproj" (build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:01.10
