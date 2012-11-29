@@ -18,18 +18,6 @@ void Draw::draw(Type type){
 	glPushMatrix();
 	glOrtho(0, width, height , 0, -1.0, 1.0);
 	switch (type){
-	case line:
-		drawLine();
-		break;
-	case triangle:
-		drawTriangle();
-		break;
-	case square:
-		drawSquare();
-		break;
-	case better:
-		drawBetterSquare();
-		break;
 	case sky:
 		drawSky();
 
@@ -64,39 +52,7 @@ void Draw::setupGL(){
 	glLoadIdentity();
 
 }
-void Draw::drawLine(){
-	glBegin(GL_LINES);
-	glColor3f(1.0,0.0,0.0);
-	glVertex2f(10.0,10.0);
-	glVertex2f(50.0,50.0);
-	glEnd();
 
-	glBegin(GL_LINES);
-	glColor3f(0.0,1.0,0.0);
-	glVertex2f(100.0,250.0);
-	glVertex2f(450.0,500.0);
-	glEnd();
-}
-void Draw::drawTriangle(){
-	glBegin(GL_TRIANGLES);
-	glColor3f(1.0,0.0,0.0);
-	glVertex2f(200.0,10.0);
-
-	glColor3f(0.0,1.0,0.0);
-	glVertex2f(350.0,250.0);
-	
-	glColor3f(0.0,0.0,1.0);
-	glVertex2f(180.0,180.0);
-	glEnd();
-}
-void Draw::drawSquare(){
-	glBegin(GL_QUADS);
-
-
-}
-void Draw::drawBetterSquare(){
-
-}
 void Draw::drawSky(){
 	float x[150];
 	float y[150];
