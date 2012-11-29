@@ -2,7 +2,14 @@
 #include "GL\glut.h"
 #include "draw.h"
 
+
 Draw::Draw(): window(NULL),width(600),height(400){
+	setupWindow();
+	setupGL();
+}
+Draw::Draw(int argc, char** argv): window(NULL),width(600),height(400){
+	this->argc = argc;
+	this->argv = argv;
 	setupWindow();
 	setupGL();
 }
@@ -26,8 +33,8 @@ void Draw::draw(Type type){
 	SDL_GL_SwapBuffers();
 }
 
-void Draw::setupWindow(){
-	if(SDL_Init(SDL_INIT_VIDEO))
+/*void Draw::setupWindow(){
+	if(SDL_Init(SDL_INIT_EVERYTHING))
 		exit(1);
 	SDL_GL_SetAttribute(SDL_GL_RED_SIZE,8);
 	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE,8);
@@ -38,6 +45,21 @@ void Draw::setupWindow(){
 	SDL_WM_SetCaption( "skyGesture Pre-Alpha Build v0.001a", NULL );
 	if((window = SDL_SetVideoMode(width,height,32,SDL_OPENGL)) == NULL)
 		exit(1);
+}*/
+
+
+void Draw::setupWindow(){
+	//GLUT Window Initialization
+	glutInit(&(this->argc),this->argv);
+	glutInitDisplayMode(GLUT_RGB|GLUT_DEPTH|GLUT_DOUBLE|GLUT_ALPHA);
+	glutInitWindowPosition(100,100);
+	glutInitWindowSize(this->width,this->height);
+	glutCreateWindow("skyGesture Pre-Alpha Build v0.001a");
+
+	//register callback
+	glutDisplayFunc(drawSky);
+	//enter GLUT event processing cycle
+	glutMainLoop();
 }
 
 void Draw::setupGL(){
@@ -53,20 +75,4 @@ void Draw::setupGL(){
 
 }
 
-void Draw::drawSky(){
-	float x[150];
-	float y[150];
-	float z[150];
-	srand(54654);
-
-	glBegin(GL_POINTS);
-	glColor3f(0.3,0.7,0.9);
-	for (int i = 0; i < 150; i++){
-		x[i] = rand()%width;
-		y[i] = rand()%height;
-		z[i] = rand()%2;
-		glVertex3f(x[i],y[i],z[i]);
-	}
-	glEnd();
-}
 
