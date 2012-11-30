@@ -1,15 +1,25 @@
 //#include "SDL.h"
+#include <windows.h>
 #include "GL\glut.h"
-#include <GL\GL.h>
+//#include <GL\GL.h>
+//#include <GL\glew.h>
 #include <GL\glfw.h>
 #include <math.h>
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <istream>
-
+#include <tchar.h>
+#include <strsafe.h>
+#include <psapi.h>
+#include <vector>
+#define NUM_THREADS     5
+#define BUF_SIZE 255
 using namespace std;
-
+typedef struct MyData {
+	int val1;
+	int val2;
+} MYDATA, *PMYDATA;
 const int width = 800;
 const int height = 600;
 float angle = 0.0f, red = 1.0f, blue = 1.0f, green = 1.0f;
@@ -27,6 +37,9 @@ float zdiff = 0.0f;
 int frameCount = 0;
 int frame=0,time,timebase=0;
 char s[50];
+int argcHold;
+char* argsHold;
+		
 GLuint my_buffer;
 
 GLvoid *font_style = GLUT_BITMAP_TIMES_ROMAN_10;
@@ -233,7 +246,7 @@ void calcFPS(){
 
 void drawSky(void){
 	int i;
-	GLfloat ang, x, y, z = -50;
+	//GLfloat ang, x, y, z = -50;
 	srand(54654);
 	// Clear Color and Depth Buffers
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
@@ -365,35 +378,159 @@ void setupWindow(int argc, char* args[]){
 
 
 
-
-int main( int argc, char* args[] )
-{
-
-	string input, buffer;
+int main( int argc, char* args[] ){
+	unsigned int i;
+	argcHold = argc;
+	argsHold = *args;
+	string input, buffer, filename;
 	ofstream myfile;
 	cout << "Welcome to skyGesture Application.\nThis program requires a .cvs file.\nPlease note that it has to be in the same directory as this executable.\n"<<endl;
-	/*
-	cout << "Enter file name: "<< endl;
-	cin >> input;
-	myfile.open (input);
-	if (myfile.is_open()){
-	while ( myfile.good() ){
-	getline(myfile,buffer);
-	cout << buffer << endl;
-	}
-	myfile.close();
-	}
+		int point_count = 0; // how many points
+	short col = 0; // Which column am i in max 4: x, y, z, classification
+	string temp; // to hold and devide the lines from the file
+	char *tempArr;
+	char *pch; // for spliting the 
+	// x, y, & z coordinates will be read in from a file and stored in a vector
+	vector<double> xcor;
+	vector<double> ycor;
+	vector<double> zcor;
+	vector<int> classification; // holds classification of each point whether it is a point on a tree or the ground
+	cout << "Trying to open file" << endl;
+	ifstream file;
+	//file.open("C:/Users/Juan/Downloads/lidar.csv"); // need to make this general
+	cout << "Name of your .csv file: ";
+	cin >> filename;
+	filename += ".csv";
+	cout << "Filename: " << filename << endl;
+	file.open(filename);
+	if(file.is_open())
+	{
+		cout << "File is open" << endl;
+		getline(file,temp); // get the header out of the way
 
-	else cout << "Unable to open file"; 
-	*/
+		//while(point_count <5)
+		while(file.good())
+		{
+			getline(file,temp);
+			//cout << temp << endl;
+			tempArr = new char[temp.size()+1];
+			tempArr[temp.size()] = 0;
+			memcpy(tempArr, temp.c_str(), temp.size());
+			//cout << tempArr << endl;
+			pch = strtok(tempArr,",");
+			col = 0;
+			while(pch != NULL)
+			{
+				switch(col)
+				{
+				case 0:
+					xcor.push_back(atof(pch));
+					break;
+				case 1:
+					ycor.push_back(atof(pch));
+					break;
+				case 2:
+					zcor.push_back(atof(pch));
+					break;
+				case 3:
+					classification.push_back(atoi(pch));
+					break;
+				default:
+					cout << "Don't print this out" << endl;
+				}
+				pch = strtok(NULL, ",");
+				col++;
+			}
+			point_count++;
+		}
+		cout << "Read in " << point_count << " points" << endl;
+		file.close();
+		cout << "File has been closed" << endl;
+		/*
+		// print out the points
+		cout << "X-coor\tY-coor\t\tZ-coor\tClass" << endl;
+		for(int i=0; i<classification.size(); i++)
+		{
+		cout << xcor[i] << '\t' << ycor[i] << '\t' << zcor[i] << '\t' << classification[i] << endl;
+		}
+		*/
+	}
+	else
+		cout << "Unable to open file" << endl;
+	
+
 	cout << "Type in 'start' to start "<< endl;
 	do{
 		cout << ">>";
 		getline(cin, input);
 		if(input.compare("start")==0){
+		
 			setupWindow(argc,args);
 		}
 	} while(input.compare("quit") != 0);
 
 	return 0;    
+}
+DWORD WINAPI MyThreadFunction( LPVOID lpParam ) 
+{ 
+	HANDLE hStdout;
+	PMYDATA pDataArray;
+
+	TCHAR msgBuf[BUF_SIZE];
+	size_t cchStringSize;
+	DWORD dwChars;
+
+	// Make sure there is a console to receive output results. 
+
+	hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
+	if( hStdout == INVALID_HANDLE_VALUE )
+		return 1;
+
+	// Cast the parameter to the correct data type.
+	// The pointer is known to be valid because 
+	// it was checked for NULL before the thread was created.
+
+	pDataArray = (PMYDATA)lpParam;
+
+	// Print the parameter values using thread-safe functions.
+
+	StringCchPrintf(msgBuf, BUF_SIZE, TEXT("Parameters = %d, %d\n"), 
+		pDataArray->val1, pDataArray->val2); 
+	StringCchLength(msgBuf, BUF_SIZE, &cchStringSize);
+	WriteConsole(hStdout, msgBuf, (DWORD)cchStringSize, &dwChars, NULL);
+
+	return 0; 
+}
+void ErrorHandler(LPTSTR lpszFunction) 
+{ 
+	// Retrieve the system error message for the last-error code.
+
+	LPVOID lpMsgBuf;
+	LPVOID lpDisplayBuf;
+	DWORD dw = GetLastError(); 
+
+	FormatMessage(
+		FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+		FORMAT_MESSAGE_FROM_SYSTEM |
+		FORMAT_MESSAGE_IGNORE_INSERTS,
+		NULL,
+		dw,
+		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		(LPTSTR) &lpMsgBuf,
+		0, NULL );
+
+	// Display the error message.
+
+	lpDisplayBuf = (LPVOID)LocalAlloc(LMEM_ZEROINIT, 
+		(lstrlen((LPCTSTR) lpMsgBuf) + lstrlen((LPCTSTR) lpszFunction) + 40) * sizeof(TCHAR)); 
+	StringCchPrintf((LPTSTR)lpDisplayBuf, 
+		LocalSize(lpDisplayBuf) / sizeof(TCHAR),
+		TEXT("%s failed with error %d: %s"), 
+		lpszFunction, dw, lpMsgBuf); 
+	MessageBox(NULL, (LPCTSTR) lpDisplayBuf, TEXT("Error"), MB_OK); 
+
+	// Free error-handling buffer allocations.
+
+	LocalFree(lpMsgBuf);
+	LocalFree(lpDisplayBuf);
 }
