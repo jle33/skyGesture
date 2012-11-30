@@ -15,10 +15,13 @@ const int height = 600;
 float angle = 0.0f, red = 1.0f, blue = 1.0f, green = 1.0f;
 bool* keyStates = new bool[256]; // Create an array of boolean values of length 256
 bool* keySpecialStates = new bool[246]; 
-bool movingUp = false; // Whether or not we are moving up or down
+bool  fullscreen = false, mouseDown = false; 
+float xLocation = 0.0f; // Keep track of our position on the x axis.
 float yLocation = 0.0f; // Keep track of our position on the y axis.
 float yRotationAngle = 0.0f; // The angle of rotation for our object
-
+float xRotationAngle = 0.0f; // The angle of rotation for our object
+float xdiff = 0.0f;
+float ydiff = 0.0f;
 
 
 void pressNormalKeys(unsigned char key, int x, int y) {keyStates[key] = true; }
@@ -27,37 +30,47 @@ void pressSpecialKeys(int key, int x, int y) {keySpecialStates[key] = true;}
 void releaseSpecialKeys(int key, int x, int y) {keySpecialStates[key] = false;}
 
 void keyOperations (void) { 
-	if (keyStates[27]) {exit(0);}
+	if (keyStates[27]) {exit(1);}
 
 }	
 void specialKeyOperations(void){
 	if(keySpecialStates[GLUT_KEY_F1 ]){
+		fullscreen = !fullscreen;
+		if (fullscreen)
+			glutFullScreen();
+		else{
+			glutReshapeWindow(width, height);
+			glutPositionWindow(50, 50);
+		}
+	}
+	if(keySpecialStates[GLUT_KEY_F2 ]){
 		red = 1.0;
 		green = 0.0;
 		blue = 0.0;
 	}
-	if(keySpecialStates[GLUT_KEY_F2 ]){
+	if(keySpecialStates[GLUT_KEY_F3 ]){
 		red = 0.0;
 		green = 1.0;
 		blue = 0.0;
 	}
-	if(keySpecialStates[GLUT_KEY_F3 ]){
+	if(keySpecialStates[GLUT_KEY_F4 ]){
 		red = 0.0;
 		green = 0.0;
 		blue = 1.0;
 	}
 	if(keySpecialStates[GLUT_KEY_LEFT]){
 		cout<< "Left is press."<< endl;
+		yRotationAngle -= 0.005f; // Increment our rotation value
+		if (yRotationAngle < 0.0f) // If we have rotated beyond 360 degrees (a full rotation)
+			yRotationAngle += 360.0f; // Add 360 degrees off of our rotation
+		
+	}
+	if(keySpecialStates[GLUT_KEY_RIGHT]){
+		cout<< "Right is press."<< endl;
 		yRotationAngle += 0.005f; // Increment our rotation value
 
 		if (yRotationAngle > 360.0f) // If we have rotated beyond 360 degrees (a full rotation)
 			yRotationAngle -= 360.0f; // Subtract 360 degrees off of our rotation
-	}
-	if(keySpecialStates[GLUT_KEY_RIGHT]){
-		cout<< "Right is press."<< endl;
-		yRotationAngle -= 0.005f; // Increment our rotation value
-		if (yRotationAngle < 0.0f) // If we have rotated beyond 360 degrees (a full rotation)
-			yRotationAngle += 360.0f; // Add 360 degrees off of our rotation
 	}
 	if(keySpecialStates[GLUT_KEY_UP]){
 		
@@ -74,6 +87,29 @@ void specialKeyOperations(void){
 	}
 
 
+}
+void mouse(int button, int state, int x, int y)
+{
+	if (button == GLUT_LEFT_BUTTON)
+	{
+		mouseDown = true;
+
+		xdiff = x - yRotationAngle;
+		ydiff = -y + xRotationAngle;
+	}
+	else
+		mouseDown = false;
+}
+
+void mouseMotion(int x, int y)
+{
+	if (mouseDown)
+	{
+		yRotationAngle = x - xdiff;
+		xRotationAngle = y + ydiff;
+
+		glutPostRedisplay();
+	}
 }
 void renderPrimitive (void) {
 	glColor3f(0.0f, 0.0f, 1.0f); // Set the colour of the square to blue
@@ -112,15 +148,14 @@ void display (void) {
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // Clear the background of our window to red
 	glClear(GL_COLOR_BUFFER_BIT); //Clear the color buffer (more buffers later on)
 	glLoadIdentity(); // Load the Identity Matrix to reset our drawing locations
-
+	
 	glTranslatef(0.0f, 0.0f, -5.0f); // Push everything 5 units back into the scene, otherwise we won't see the primitive
 
 	glTranslatef(0.0f, yLocation, 0.0f); // Translate our object along the y axis
 
-	glRotatef(yRotationAngle, 0.0f, 1.0f, 0.0f); // Rotate our object around the y axis
-
-	glutWireCube(2.0f); // Render the primitive
-
+	//glRotatef(yRotationAngle, 0.0f, 1.0f, 0.0f); // Rotate our object around the y axis
+	glRotatef(xRotationAngle, 1.0f, 0.0f, 0.0f);
+	glRotatef(yRotationAngle, 0.0f, 1.0f, 0.0f);
 
 	glutWireCube(2.0f); // Render the primitive  
 	//renderPrimitive(); // Render the primitive
@@ -153,7 +188,7 @@ void reshape(int w, int h){
 
 void setupWindow(int argc, char* args[]){
 
-	glfwDisable(GLFW_MOUSE_CURSOR); // Hide the mouse cursor
+	//glfwDisable(GLFW_MOUSE_CURSOR); // Hide the mouse cursor
 	//GLUT Window Initialization
 	glutInit(&(argc),args);
 	glutInitDisplayMode(GLUT_RGBA|GLUT_DEPTH|GLUT_DOUBLE);
@@ -170,13 +205,17 @@ void setupWindow(int argc, char* args[]){
 	glutKeyboardUpFunc(releaseNormalKeys);
 	glutSpecialFunc(pressSpecialKeys);
 	glutSpecialUpFunc(releaseSpecialKeys);
+	glutMouseFunc(mouse);
+	glutMotionFunc(mouseMotion);
 
 	//initialize loop
 	for(int i = 0; i < 256; i++) 
 		keyStates[i] = false; 
 	for(int i = 0; i < 246; i++)
 		keySpecialStates[i] = false; 
-
+	//glEnable(GL_DEPTH_TEST);
+	//glDepthFunc(GL_LEQUAL);
+	//glClearDepth(1.0f);
 	//enter GLUT event processing cycle
 	glutMainLoop();
 }
