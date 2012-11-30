@@ -4,18 +4,18 @@ using namespace std;
 
 void LeftHold()
 {
-	INPUT Input={0};													// Create our input, 0 for mouse, 1 for keyboard, 2 for hardware
-	Input.type = INPUT_MOUSE;											// Let input know we are using the mouse.
-	Input.mi.dwFlags = MOUSEEVENTF_LEFTDOWN;							// We are setting left mouse button down.
-	SendInput( 1, &Input, sizeof(INPUT) );								// Send the input.
-	ZeroMemory(&Input,sizeof(INPUT));									//Clear memory
+	INPUT Input={0};	// Create our input, 0 for mouse, 1 for keyboard, 2 for hardware
+	Input.type = INPUT_MOUSE;	// Let input know we are using the mouse.
+	Input.mi.dwFlags = MOUSEEVENTF_LEFTDOWN;	// We are setting left mouse button down.
+	SendInput( 1, &Input, sizeof(INPUT) );	// Send the input.
+	ZeroMemory(&Input,sizeof(INPUT));	//Clear memory
 }
 
 void LeftRelease()
 {
 	INPUT Input={0};							
 	Input.type = INPUT_MOUSE;									
-	Input.mi.dwFlags  = MOUSEEVENTF_LEFTUP;								// setting left mouse button up.
+	Input.mi.dwFlags  = MOUSEEVENTF_LEFTUP;	// setting left mouse button up.
 	SendInput( 1, &Input, sizeof(INPUT) );								
 }
 void RightHold()
@@ -76,24 +76,26 @@ POINT GetMousePosition()
 // Sets the mouses position.
 void SetMousePosition(POINT mp)
 {
-	long fScreenWidth	    = GetSystemMetrics( SM_CXSCREEN ) - 1; 
-	long fScreenHeight	    = GetSystemMetrics( SM_CYSCREEN ) - 1; 
+	long fScreenWidth = GetSystemMetrics( SM_CXSCREEN ) - 1; 
+	long fScreenHeight = GetSystemMetrics( SM_CYSCREEN ) - 1; 
 
 	// http://msdn.microsoft.com/en-us/library/ms646260(VS.85).aspx
 	// If MOUSEEVENTF_ABSOLUTE value is specified, dx and dy contain normalized absolute coordinates between 0 and 65,535.
 	// The event procedure maps these coordinates onto the display surface.
 	// Coordinate (0,0) maps onto the upper-left corner of the display surface, (65535,65535) maps onto the lower-right corner.
-	float fx		        = mp.x * ( 65535.0f / fScreenWidth  );
-	float fy		        = mp.y * ( 65535.0f / fScreenHeight );		  
+	float fx = mp.x * ( 65535.0f / fScreenWidth  );
+	float fy = mp.y * ( 65535.0f / fScreenHeight );		  
 
-	INPUT Input             = { 0 };			
-	Input.type		        = INPUT_MOUSE;
+	INPUT Input = { 0 };			
+	Input.type = INPUT_MOUSE;
 
-	Input.mi.dwFlags	    = MOUSEEVENTF_MOVE|MOUSEEVENTF_ABSOLUTE;
+	Input.mi.dwFlags = MOUSEEVENTF_MOVE|MOUSEEVENTF_ABSOLUTE;
 
-	Input.mi.dx		        = (long)fx;
-	Input.mi.dy		        = (long)fy;
+	//Storing x, y coordinates into mouse input
+	Input.mi.dx	= (long)fx;
+	Input.mi.dy	= (long)fy;
 
+	//Sends it to input to be processed
 	SendInput(1,&Input,sizeof(INPUT));
 }
 					
@@ -113,19 +115,20 @@ int main()
 
 	while(runme)
 	{
-		long fScreenWidth	    = GetSystemMetrics( SM_CXSCREEN ) - 1; 
-		long fScreenHeight	    = GetSystemMetrics( SM_CYSCREEN ) - 1; 
-		float fx		        = x * ( 65535.0f / fScreenWidth  );
-		float fy		        = y * ( 65535.0f / fScreenHeight );		  
+		long fScreenWidth = GetSystemMetrics( SM_CXSCREEN ) - 1; 
+		long fScreenHeight = GetSystemMetrics( SM_CYSCREEN ) - 1; 
+		float fx = x * ( 65535.0f / fScreenWidth  );
+		float fy = y * ( 65535.0f / fScreenHeight );		  
 
-		INPUT Input             = { 0 };			
-		Input.type		        = INPUT_MOUSE;
+		INPUT Input = { 0 };			
+		Input.type = INPUT_MOUSE;
 
-		Input.mi.dwFlags	    = MOUSEEVENTF_MOVE|MOUSEEVENTF_ABSOLUTE;
+		Input.mi.dwFlags = MOUSEEVENTF_MOVE|MOUSEEVENTF_ABSOLUTE;
 
-		Input.mi.dx		        = (long)fx;
-		Input.mi.dy		        = (long)fy;
+		Input.mi.dx = (long)fx;
+		Input.mi.dy	= (long)fy;
 		cout<< "x" << fx << "\ty" << fy << endl;
+		//This sleep timer, just slows down the mouse cursor, it went too fast so ya
 		Sleep(2);
 		SendInput(1,&Input,sizeof(INPUT));
 		x++;
