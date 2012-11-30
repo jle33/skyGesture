@@ -25,8 +25,8 @@ float xdiff = 0.0f;
 float ydiff = 0.0f;
 float zdiff = 0.0f;
 int frameCount = 0;
-float fps = 0;
-int currentTime = 0, previousTime = 0;
+int frame=0,time,timebase=0;
+char s[50];
 GLuint my_buffer;
 
 GLvoid *font_style = GLUT_BITMAP_TIMES_ROMAN_10;
@@ -39,8 +39,6 @@ void printw (float x, float y, float z, char* format, ...);
 
 void keyOperations (void) { 
 	if (keyStates[27]) {exit(1);}
-	
-
 }	
 void specialKeyOperations(void){
 	if(keySpecialStates[GLUT_KEY_F1 ]){
@@ -144,31 +142,62 @@ void mouseMotion(int x, int y)
 	}
 }
 
-void calculateFPS()
-{
-	//  Increase frame count
-	frameCount++;
+void renderBitmapString(
+	float x,
+	float y,
+	float z,
+	void *font,
+	char *string) {
 
-	//  Get the number of milliseconds since glutInit called
-	//  (or first call to glutGet(GLUT ELAPSED TIME)).
-	currentTime = glutGet(GLUT_ELAPSED_TIME);
-
-	//  Calculate time passed
-	int timeInterval = currentTime - previousTime;
-
-	if(timeInterval > 1000)
-	{
-		//  calculate the number of frames per second
-		fps = frameCount / (timeInterval / 1000.0f);
-
-		//  Set time
-		previousTime = currentTime;
-
-		//  Reset frame count
-		frameCount = 0;
-	}
+		char *c;
+		glRasterPos3f(x, y,z);
+		for (c=string; *c != '\0'; c++) {
+			glutBitmapCharacter(font, *c);
+		}
 }
+void renderStrokeFontString(
+	float x,
+	float y,
+	float z,
+	void *font,
+	char *string) {  
 
+		char *c;
+		glPushMatrix();
+		glTranslatef(x, y,z);
+		glScalef(0.002f, 0.002f, 0.002f);
+		for (c=string; *c != '\0'; c++) {
+			glutStrokeCharacter(font, *c);
+		}
+		glPopMatrix();
+}
+void restorePerspectiveProjection() {
+
+	glMatrixMode(GL_PROJECTION);
+	// restore previous projection matrix
+	glPopMatrix();
+
+	// get back to modelview mode
+	glMatrixMode(GL_MODELVIEW);
+}
+void setOrthographicProjection() {
+
+	// switch to projection mode
+	glMatrixMode(GL_PROJECTION);
+
+	// save previous matrix which contains the
+	//settings for the perspective projection
+	glPushMatrix();
+
+	// reset matrix
+	glLoadIdentity();
+
+	// set a 2D orthographic projection
+	gluOrtho2D(0, width, height, 0);
+
+	// switch back to modelview mode
+	glMatrixMode(GL_MODELVIEW);
+}
 void renderPrimitive (void) {
 	glColor3f(0.0f, 0.0f, 1.0f); // Set the colour of the square to blue
 
@@ -180,12 +209,28 @@ void renderPrimitive (void) {
 	glEnd();
 }
 
-void drawFPS()
-{
-	glLoadIdentity ();
-	//  Print the FPS to the window
-	printw (-0.9, -0.9, 0, "FPS: %4.2f", fps);
+void calcFPS(){
+	// Code to compute frames per second
+	frame++;
+
+	time=glutGet(GLUT_ELAPSED_TIME);
+	if (time - timebase > 1000) {
+		sprintf(s,"FPS:%4.2f",
+			frame*1000.0/(time-timebase));
+		timebase = time;
+		frame = 0;
+	}
+
+	// Code to display a string (fps) with bitmap fonts
+	setOrthographicProjection();
+
+	glPushMatrix();
+	glLoadIdentity();
+	renderBitmapString(5,30,0,GLUT_BITMAP_TIMES_ROMAN_24,s);
+	glPopMatrix();
+	restorePerspectiveProjection();
 }
+
 void drawSky(void){
 	int i;
 	GLfloat ang, x, y, z = -50;
@@ -208,7 +253,6 @@ void drawSky(void){
 void display (void) {
 	keyOperations();
 	specialKeyOperations();
-	calculateFPS();
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // Clear the background of our window to red
 	glClear(GL_COLOR_BUFFER_BIT); //Clear the color buffer (more buffers later on)
 	glLoadIdentity(); // Load the Identity Matrix to reset our drawing locations
@@ -238,9 +282,8 @@ void display (void) {
 	glEnd();
 	glPopMatrix();
 
-	drawFPS();
 	//glutSolidTeapot( 20.0f );
-
+	calcFPS();
 	//drawFPS();
 	//renderPrimitive(); // Render the primitive
 	//drawSky();
@@ -269,39 +312,7 @@ void reshape(int w, int h){
 	glMatrixMode(GL_MODELVIEW);
 }
 
-void printw (float x, float y, float z, char* format, ...)
-{
-	va_list args;	//  Variable argument list
-	int len;		//	String length
-	int i;			//  Iterator
-	char * text;	//	Text
 
-	//  Initialize a variable argument list
-	va_start(args, format);
-
-	//  Return the number of characters in the string referenced the list of arguments.
-	//  _vscprintf doesn't count terminating '\0' (that's why +1)
-	len = _vscprintf(format, args) + 1; 
-
-	//  Allocate memory for a string of the specified size
-	text = (char *)malloc(len * sizeof(char));
-
-	//  Write formatted output using a pointer to the list of arguments
-	vsprintf_s(text, len, format, args);
-
-	//  End using variable argument list 
-	va_end(args);
-
-	//  Specify the raster position for pixel operations.
-	glRasterPos3f (x, y, z);
-
-	//  Draw the characters one by one
-	for (i = 0; text[i] != '\0'; i++)
-		glutBitmapCharacter(font_style, text[i]);
-
-	//  Free the allocated memory for the string
-	free(text);
-}
 //  define the window position on screen
 int window_x;
 int window_y;
@@ -334,15 +345,16 @@ void setupWindow(int argc, char* args[]){
 	glutSpecialUpFunc(releaseSpecialKeys);
 	glutMouseFunc(mouse);
 	glutMotionFunc(mouseMotion);
-	glGenBuffers(1, &my_buffer);
+	
+	// OpenGL init
+	//glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
 	//initialize loop
 	for(int i = 0; i < 256; i++) 
 		keyStates[i] = false; 
 	for(int i = 0; i < 246; i++)
 		keySpecialStates[i] = false; 
-	//glEnable(GL_DEPTH_TEST);
-	//glDepthFunc(GL_LEQUAL);
-	//glClearDepth(1.0f);
+
 	//enter GLUT event processing cycle
 	glutMainLoop();
 }
