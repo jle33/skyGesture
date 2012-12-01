@@ -1,31 +1,32 @@
-//#include "SDL.h"
+//Windows Library
 #include <windows.h>
-#include "GL\glut.h"
-//#include <GL\GL.h>
-//#include <GL\glew.h>
-#include <GL\glfw.h>
+#include <tchar.h>
+#include <strsafe.h>
+#include <psapi.h>
+
+//Standard Library
+#include <vector>
 #include <math.h>
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <istream>
-#include <tchar.h>
-#include <strsafe.h>
-#include <psapi.h>
-#include <vector>
-#define NUM_THREADS     5
+
+//Our own header
+#include "draw.h"
+
+#define NUM_THREADS 5
 #define BUF_SIZE 255
 using namespace std;
-typedef struct MyData {
-	int val1;
-	int val2;
-} MYDATA, *PMYDATA;
-const int width = 800;
-const int height = 600;
+using namespace glm;
+
+//Special Function Variables
 float angle = 0.0f, red = 1.0f, blue = 1.0f, green = 1.0f;
 bool* keyStates = new bool[256]; // Create an array of boolean values of length 256
 bool* keySpecialStates = new bool[246]; 
 bool  fullscreen = false, leftMouseDown = false, rightMouseDown; 
+
+//Variables for translating an object and Zoom
 float xLocation = 0.0f; // Keep track of our position on the x axis.
 float yLocation = 0.0f; // Keep track of our position on the y axis.
 float zLocation = -10.0f;
@@ -34,21 +35,36 @@ float xRotationAngle = 0.0f; // The angle of rotation for our object
 float xdiff = 0.0f;
 float ydiff = 0.0f;
 float zdiff = 0.0f;
+
+//FPS Variables
 int frameCount = 0;
 int frame=0,time,timebase=0;
 char s[50];
 int argcHold;
 char* argsHold;
-		
-GLuint my_buffer;
 
+//  define the window position on screen
+int window_x;
+int window_y;
+
+// Our screen size
+const int width = 800;
+const int height = 600;
+
+//Lidar Variables
+int point_count = 0; // how many points
+vector<double> xcor;
+vector<double> ycor;
+vector<double> zcor;
+vector<int> classification; // holds classification of each point whether it is a point on a tree or the ground	
+
+//Font Style
 GLvoid *font_style = GLUT_BITMAP_TIMES_ROMAN_10;
 
 void pressNormalKeys(unsigned char key, int x, int y) {keyStates[key] = true; }
 void releaseNormalKeys(unsigned char key, int x, int y) {keyStates[key] = false; }
 void pressSpecialKeys(int key, int x, int y) {keySpecialStates[key] = true;}
 void releaseSpecialKeys(int key, int x, int y) {keySpecialStates[key] = false;}
-void printw (float x, float y, float z, char* format, ...);
 
 void keyOperations (void) { 
 	if (keyStates[27]) {exit(1);}
@@ -84,6 +100,15 @@ void specialKeyOperations(void){
 		yLocation = 0.0f;
 		xRotationAngle = 0.0f;
 		yRotationAngle = 0.0f;
+		glutPostRedisplay();
+	}
+	if(keySpecialStates[GLUT_KEY_PAGE_UP]){
+		zLocation += 1.0f;
+		glutPostRedisplay();
+	}
+	if(keySpecialStates[GLUT_KEY_PAGE_DOWN]){
+		zLocation -= 1.0f;
+
 		glutPostRedisplay();
 	}
 	if(keySpecialStates[GLUT_KEY_LEFT]){
@@ -155,12 +180,7 @@ void mouseMotion(int x, int y)
 	}
 }
 
-void renderBitmapString(
-	float x,
-	float y,
-	float z,
-	void *font,
-	char *string) {
+void renderBitmapString(float x,float y,float z,void *font,char *string) {
 
 		char *c;
 		glRasterPos3f(x, y,z);
@@ -168,12 +188,7 @@ void renderBitmapString(
 			glutBitmapCharacter(font, *c);
 		}
 }
-void renderStrokeFontString(
-	float x,
-	float y,
-	float z,
-	void *font,
-	char *string) {  
+void renderStrokeFontString(float x,float y,float z,void *font,char *string) {  
 
 		char *c;
 		glPushMatrix();
@@ -249,16 +264,21 @@ void drawSky(void){
 	//GLfloat ang, x, y, z = -50;
 	srand(54654);
 	// Clear Color and Depth Buffers
-	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-
+	//glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+	double ratioPoints = .000001;
 	glColor3f(red,green,blue);
-	glBegin(GL_LINES);
-	for(int i = 0; i< 100; i++){
-		glVertex3f(rand()%width,rand()%height,rand()%100);
+	glBegin(GL_POINTS);
+	double tempx,tempy,tempz;
+	for(int i = 0; i< point_count; i++){
+		tempx = xcor[i]*ratioPoints;
+		tempy = ycor[i]*ratioPoints;
+		tempz = zcor[i]*ratioPoints;
+		//cout<< "Plotting at (" <<tempx<<","<<tempy<<","<<tempz<<")."<<endl;
+		glVertex3f(tempx,tempy,tempz);
 	}
 	glEnd();
 
-	glutSwapBuffers();
+	//glutSwapBuffers();
 
 }
 
@@ -279,9 +299,11 @@ void display (void) {
 	glRotatef(yRotationAngle, 0.0f, 1.0f, 0.0f);
 
 	//glColor3f(red,green,blue);
-	glColor3f( 1.0f, 1.0f, 0.0f );
-	glutSolidTeapot(20.0f);
-
+	//glColor3f( 1.0f, 1.0f, 0.0f );
+	//glutSolidTeapot(20.0f);
+	glPushMatrix();
+	drawSky();
+	glPopMatrix();
 	// Draw X/Y/Z Lines
 	glPushMatrix();
 	glColor3f( 1.0f, 1.0f, 1.0f );
@@ -299,7 +321,7 @@ void display (void) {
 	calcFPS();
 	//drawFPS();
 	//renderPrimitive(); // Render the primitive
-	//drawSky();
+	//
 	glutSwapBuffers(); // Flush the OpenGL buffers to the window
 
 }
@@ -326,9 +348,6 @@ void reshape(int w, int h){
 }
 
 
-//  define the window position on screen
-int window_x;
-int window_y;
 void centerOnScreen ()
 {
 	window_x = (glutGet (GLUT_SCREEN_WIDTH) - width)/2;
@@ -337,7 +356,7 @@ void centerOnScreen ()
 
 void setupWindow(int argc, char* args[]){
 
-	glfwDisable(GLFW_MOUSE_CURSOR); // Hide the mouse cursor
+	 // Hide the mouse cursor
 	//GLUT Window Initialization
 	glutInit(&(argc),args);
 	glutInitDisplayMode(GLUT_RGBA|GLUT_DEPTH|GLUT_DOUBLE);
@@ -351,7 +370,7 @@ void setupWindow(int argc, char* args[]){
 	//register callback
 	glutDisplayFunc(display);
 	glutReshapeFunc(reshape);
-	glutIdleFunc(display);
+	//glutIdleFunc(display);
 	glutKeyboardFunc(pressNormalKeys);
 	glutKeyboardUpFunc(releaseNormalKeys);
 	glutSpecialFunc(pressSpecialKeys);
@@ -372,7 +391,30 @@ void setupWindow(int argc, char* args[]){
 	glutMainLoop();
 }
 
-
+void setupGLFWwindow(){
+	glfwOpenWindowHint(GLFW_FSAA_SAMPLES,4);
+	glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR,3);
+	glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR,3);
+	glfwOpenWindowHint(GLFW_OPENGL_PROFILE,GLFW_OPENGL_CORE_PROFILE);
+	
+	// Open a window and create its OpenGL context
+	if( !glfwOpenWindow( width, height, 0,0,0,0, 32,0, GLFW_WINDOW ) ){
+		fprintf( stderr, "Failed to open GLFW window\n" );
+		glfwTerminate();
+	}
+	// Initialize GLEW
+	if (glewInit() != GLEW_OK) {
+		fprintf(stderr, "Failed to initialize GLEW\n");
+	}
+	glfwSetWindowTitle( "skyGesture Pre-Alpha GLFW Build v0.001a" );
+	glfwEnable(GLFW_STICKY_KEYS);
+	//glfwEnable(GLFW_STICKY_MOUSE_BUTTONS);
+	//glfwDisable(GLFW_MOUSE_CURSOR);
+	do{
+		 glfwSwapBuffers();
+	}
+	while(glfwGetKey(GLFW_KEY_ESC)!= GLFW_PRESS && glfwGetWindowParam(GLFW_OPENED));
+}
 
 
 
@@ -385,16 +427,13 @@ int main( int argc, char* args[] ){
 	string input, buffer, filename;
 	ofstream myfile;
 	cout << "Welcome to skyGesture Application.\nThis program requires a .cvs file.\nPlease note that it has to be in the same directory as this executable.\n"<<endl;
-		int point_count = 0; // how many points
+	
 	short col = 0; // Which column am i in max 4: x, y, z, classification
 	string temp; // to hold and devide the lines from the file
 	char *tempArr;
 	char *pch; // for spliting the 
 	// x, y, & z coordinates will be read in from a file and stored in a vector
-	vector<double> xcor;
-	vector<double> ycor;
-	vector<double> zcor;
-	vector<int> classification; // holds classification of each point whether it is a point on a tree or the ground
+
 	cout << "Trying to open file" << endl;
 	ifstream file;
 	//file.open("C:/Users/Juan/Downloads/lidar.csv"); // need to make this general
@@ -459,78 +498,18 @@ int main( int argc, char* args[] ){
 		cout << "Unable to open file" << endl;
 	
 
-	cout << "Type in 'start' to start "<< endl;
+	cout << "Type in 'glut' to start using GLUT Library or 'glfw' to use GLFW Library"<< endl;
 	do{
 		cout << ">>";
 		getline(cin, input);
-		if(input.compare("start")==0){
-		
+		if(input.compare("glut")==0){
+			
 			setupWindow(argc,args);
+		}
+		if(input.compare("glfw")==0){
+			Draw *glfw = new Draw();
 		}
 	} while(input.compare("quit") != 0);
 
 	return 0;    
-}
-DWORD WINAPI MyThreadFunction( LPVOID lpParam ) 
-{ 
-	HANDLE hStdout;
-	PMYDATA pDataArray;
-
-	TCHAR msgBuf[BUF_SIZE];
-	size_t cchStringSize;
-	DWORD dwChars;
-
-	// Make sure there is a console to receive output results. 
-
-	hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
-	if( hStdout == INVALID_HANDLE_VALUE )
-		return 1;
-
-	// Cast the parameter to the correct data type.
-	// The pointer is known to be valid because 
-	// it was checked for NULL before the thread was created.
-
-	pDataArray = (PMYDATA)lpParam;
-
-	// Print the parameter values using thread-safe functions.
-
-	StringCchPrintf(msgBuf, BUF_SIZE, TEXT("Parameters = %d, %d\n"), 
-		pDataArray->val1, pDataArray->val2); 
-	StringCchLength(msgBuf, BUF_SIZE, &cchStringSize);
-	WriteConsole(hStdout, msgBuf, (DWORD)cchStringSize, &dwChars, NULL);
-
-	return 0; 
-}
-void ErrorHandler(LPTSTR lpszFunction) 
-{ 
-	// Retrieve the system error message for the last-error code.
-
-	LPVOID lpMsgBuf;
-	LPVOID lpDisplayBuf;
-	DWORD dw = GetLastError(); 
-
-	FormatMessage(
-		FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-		FORMAT_MESSAGE_FROM_SYSTEM |
-		FORMAT_MESSAGE_IGNORE_INSERTS,
-		NULL,
-		dw,
-		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		(LPTSTR) &lpMsgBuf,
-		0, NULL );
-
-	// Display the error message.
-
-	lpDisplayBuf = (LPVOID)LocalAlloc(LMEM_ZEROINIT, 
-		(lstrlen((LPCTSTR) lpMsgBuf) + lstrlen((LPCTSTR) lpszFunction) + 40) * sizeof(TCHAR)); 
-	StringCchPrintf((LPTSTR)lpDisplayBuf, 
-		LocalSize(lpDisplayBuf) / sizeof(TCHAR),
-		TEXT("%s failed with error %d: %s"), 
-		lpszFunction, dw, lpMsgBuf); 
-	MessageBox(NULL, (LPCTSTR) lpDisplayBuf, TEXT("Error"), MB_OK); 
-
-	// Free error-handling buffer allocations.
-
-	LocalFree(lpMsgBuf);
-	LocalFree(lpDisplayBuf);
 }
