@@ -25,6 +25,7 @@
 #include "NiHandTracker.h"
 #include <cassert>
 #include <Windows.h>
+#include <WinUser.h>
 #include <iostream>
 using namespace std;
 
@@ -56,6 +57,18 @@ static const char* const	cGestures[] =
 	cClickStr,
 	cWaveStr
 };
+
+bool HandDetect = false;
+bool RightClicked = false;
+bool LeftClicked = false;
+
+bool handID_1 = false;
+bool handID_2 = false;
+
+int Hands = 0;
+int MaxHands = 2;
+int ForceMaxId = 2;
+long sent = 3.5;
 
 //---------------------------------------------------------------------------
 // Statics
@@ -160,7 +173,6 @@ void SetMousePosition(POINT mp)
 	//Storing x, y coordinates into mouse input
 	Input.mi.dx	= (long)fx;
 	Input.mi.dy	= (long)fy;
-
 	//Sends it to input to be processed
 	SendInput(1,&Input,sizeof(INPUT));
 }
@@ -184,6 +196,32 @@ void XN_CALLBACK_TYPE HandTracker::Gesture_Recognized(	xn::GestureGenerator&	/*g
 	}
 
 	pThis->m_HandsGenerator.StartTracking(*pEndPosition);
+
+	if((strcmp(strGesture, "Click") == 0) && (HandDetect == true)){
+		if(RightClicked == false){
+			RightHold();
+			RightClicked = true;
+			printf("Right Click Hold\n");
+		}
+		else{
+			RightRelease();
+			RightClicked = false;
+			printf("Right Click Release\n");
+		}
+	}
+	if((strcmp(strGesture, "Wave") == 0) && (HandDetect == true)){
+		if(LeftClicked == false){
+			LeftHold();
+			LeftClicked = true;
+			printf("Left Click Hold\n");
+		}
+		else{
+			LeftRelease();
+			LeftClicked = false;
+			printf("Left Click Release\n");
+		}
+	}
+
 }
 
 void XN_CALLBACK_TYPE HandTracker::Hand_Create(	xn::HandsGenerator& /*generator*/, 
@@ -193,7 +231,12 @@ void XN_CALLBACK_TYPE HandTracker::Hand_Create(	xn::HandsGenerator& /*generator*
 												void*				pCookie)
 {
 	printf("New Hand: %d @ (%f,%f,%f)\n", nId, pPosition->X, pPosition->Y, pPosition->Z);
-
+	Hands++;
+	handID_1 = true;
+	if(Hands == MaxHands){
+		HandDetect = true;
+		handID_2 = true;
+	}
 	HandTracker*	pThis = static_cast<HandTracker*>(pCookie);
 	if(sm_Instances.Find(pThis) == sm_Instances.End())
 	{
@@ -227,25 +270,63 @@ void XN_CALLBACK_TYPE HandTracker::Hand_Update(	xn::HandsGenerator& /*generator*
 	}
 
 	it->Value().Push(*pPosition);
+
+	if(HandDetect == false){
 	//Mouse---------------------
 		long fScreenWidth = GetSystemMetrics( SM_CXSCREEN ) - 1; 
 		long fScreenHeight = GetSystemMetrics( SM_CYSCREEN ) - 1; 
 		float fx = pPosition->X * ( 65535.0f / fScreenWidth  );
 		float fy = pPosition->Y * ( 65535.0f / fScreenHeight );		  
-
+		
 		INPUT Input = { 0 };			
 		Input.type = INPUT_MOUSE;
+		INPUT old = {0};
+		INPUT older = {0};
+		INPUT news = {0};
+		INPUT mouse = {0};
+		//some mouse smoothing - not that great at all
+		
+		news.mi.dx = (long)fx * sent;
+		news.mi.dy = -(long)fy * sent;
+		
+		old.mi.dx = news.mi.dx;
+		old.mi.dy = news.mi.dy;
+		if ((abs(news.mi.dx - old.mi.dx) == abs(old.mi.dx - older.mi.dx)) && (abs(news.mi.dy - old.mi.dy) == abs(old.mi.dy - older.mi.dy)))
+		{
+			 mouse.mi.dx = news.mi.dx;
+			 mouse.mi.dy = news.mi.dy;
+		}
+		else
+		{
+			 mouse.mi.dx = old.mi.dx;
+			 mouse.mi.dy = old.mi.dy;
+		}
+			
+			older.mi.dx = old.mi.dx;
+			older.mi.dy = old.mi.dy;
+			old.mi.dx = news.mi.dx;
+			old.mi.dy = news.mi.dy;
+		//some end
+		
+
+
 
 		Input.mi.dwFlags = MOUSEEVENTF_MOVE|MOUSEEVENTF_ABSOLUTE;
+				
+			Input.mi.dx = (mouse.mi.dx + old.mi.dx)/2;
+			Input.mi.dy = (mouse.mi.dy + old.mi.dy)/2;
+			//Input.mi.dx = mouse.mi.dx;
+			//Input.mi.dy = mouse.mi.dy;
+			//Input.mi.dx = (long)fx * 3;
+			//Input.mi.dy	= -(long)fy * 3;
+		
 
-		Input.mi.dx = (long)fx;
-		Input.mi.dy	= (long)fy;
-		cout<< "x" << fx << "\ty" << fy << endl;
+		cout<< "x" << Input.mi.dx << "\ty" << Input.mi.dy << endl;
 		//This sleep timer, just slows down the mouse cursor, it went too fast so ya
 		//Sleep(2);
 		SendInput(1,&Input,sizeof(INPUT));
 	//Mouse------------------------
-
+	}
 }
 
 void XN_CALLBACK_TYPE HandTracker::Hand_Destroy(	xn::HandsGenerator& /*generator*/, 
@@ -254,7 +335,13 @@ void XN_CALLBACK_TYPE HandTracker::Hand_Destroy(	xn::HandsGenerator& /*generator
 													void*				pCookie)
 {
 	printf("Lost Hand: %d\n", nId);
+	
+	Hands--;
 
+	if(Hands < MaxHands){
+		HandDetect = false;
+		handID_2 = false;
+	}
 	HandTracker*	pThis = static_cast<HandTracker*>(pCookie);
 	if(sm_Instances.Find(pThis) == sm_Instances.End())
 	{
