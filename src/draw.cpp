@@ -7,7 +7,7 @@ Draw::Draw():width(800),height(600){
 	}
 	
 	setupWindow();
-	setupGL();
+	//setupGL();
 }
 
 Draw::~Draw(){
@@ -15,30 +15,24 @@ Draw::~Draw(){
 }
 
 void Draw::draw(Type type){
-	glClear(GL_COLOR_BUFFER_BIT);
-	glLoadIdentity();
+	//glClear(GL_COLOR_BUFFER_BIT);
+	//glLoadIdentity();
 
-	glPushMatrix();
-	glOrtho(0, width, height , 0, -1.0, 1.0);
+	//glPushMatrix();
+	//glOrtho(0, width, height , 0, -1.0, 1.0);
 	switch (type){
-	case line:
-		drawLine();
-		break;
-	case triangle:
-		drawTriangle();
-		break;
-	case square:
-		drawSquare();
-		break;
-	case better:
-		drawBetterSquare();
+	case pot:
+		drawPot();
 		break;
 	case sky:
 		drawSky();
+		break;
+	case test:
+		drawTest();
 
 	}
-	glPopMatrix();
-	glfwSwapBuffers();
+	//glPopMatrix();
+	//glfwSwapBuffers();
 }
 
 void Draw::setupWindow(){
@@ -60,11 +54,8 @@ void Draw::setupWindow(){
 	glfwEnable(GLFW_STICKY_KEYS);
 	glfwEnable(GLFW_STICKY_MOUSE_BUTTONS);
 	glfwDisable(GLFW_MOUSE_CURSOR);
-	do{
-		glfwSwapBuffers();
-	}
-	while(glfwGetKey(GLFW_KEY_ESC)!= GLFW_PRESS && glfwGetWindowParam(GLFW_OPENED));
-	glfwTerminate();
+
+	
 }
 
 void Draw::setupGL(){
@@ -79,7 +70,50 @@ void Draw::setupGL(){
 	glLoadIdentity();
 
 }
-void Draw::drawLine(){
+
+void Draw::drawTest(){
+	static const GLfloat g_vertex_buffer_data[] = {
+		-1.0f, -1.0f, 0.0f,
+		1.0f, -1.0f, 0.0f,
+		0.0f,  1.0f, 0.0f,
+	};
+
+	GLuint vertexbuffer;
+	glGenBuffers(1, &vertexbuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
+	
+	glClearColor(0.0f, 0.0f, 0.3f, 0.0f);
+	do{
+		// Clear the screen
+		glClear( GL_COLOR_BUFFER_BIT );
+		// An array of 3 vectors which represents 3 vertices
+
+		glEnableVertexAttribArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+		glVertexAttribPointer(
+			0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
+			3,                  // size
+			GL_FLOAT,           // type
+			GL_FALSE,           // normalized?
+			0,                  // stride
+			(void*)0            // array buffer offset
+			);
+
+		// Draw the triangle !
+		glDrawArrays(GL_TRIANGLES, 0, 3); // 3 indices starting at 0 -> 1 triangle
+
+		glDisableVertexAttribArray(0);
+		glColor3f( 1.0f, 1.0f, 0.0f );
+		glutSolidTeapot(20.0f);
+		// Swap buffers
+		glfwSwapBuffers();
+	}
+	while(glfwGetKey(GLFW_KEY_ESC)!= GLFW_PRESS && glfwGetWindowParam(GLFW_OPENED));
+
+
+}
+void Draw::drawPot(){
 	glBegin(GL_LINES);
 	glColor3f(1.0,0.0,0.0);
 	glVertex2f(10.0,10.0);
@@ -92,26 +126,7 @@ void Draw::drawLine(){
 	glVertex2f(450.0,500.0);
 	glEnd();
 }
-void Draw::drawTriangle(){
-	glBegin(GL_TRIANGLES);
-	glColor3f(1.0,0.0,0.0);
-	glVertex2f(200.0,10.0);
 
-	glColor3f(0.0,1.0,0.0);
-	glVertex2f(350.0,250.0);
-	
-	glColor3f(0.0,0.0,1.0);
-	glVertex2f(180.0,180.0);
-	glEnd();
-}
-void Draw::drawSquare(){
-	glBegin(GL_QUADS);
-
-
-}
-void Draw::drawBetterSquare(){
-
-}
 void Draw::drawSky(){
 	float x[150];
 	float y[150];
@@ -128,3 +143,6 @@ void Draw::drawSky(){
 	glEnd();
 }
 
+void Draw::drawLIDAR(GLdouble *data[]){
+	cout<<data[0]<<data[1]<<data[2]<<endl;
+}

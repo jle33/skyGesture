@@ -1,24 +1,13 @@
-//Windows Library
-#include <windows.h>
-#include <tchar.h>
-#include <strsafe.h>
-#include <psapi.h>
 
-//Standard Library
-#include <vector>
-#include <math.h>
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <istream>
+
+
 
 //Our own header
 #include "draw.h"
 
 #define NUM_THREADS 5
 #define BUF_SIZE 255
-using namespace std;
-using namespace glm;
+
 
 //Special Function Variables
 float angle = 0.0f, red = 1.0f, blue = 1.0f, green = 1.0f;
@@ -57,6 +46,7 @@ vector<double> xcor;
 vector<double> ycor;
 vector<double> zcor;
 vector<int> classification; // holds classification of each point whether it is a point on a tree or the ground	
+GLdouble* g_vertex_LIDAR;
 
 //Font Style
 GLvoid *font_style = GLUT_BITMAP_TIMES_ROMAN_10;
@@ -170,7 +160,7 @@ void mouseMotion(int x, int y)
 		//cout<<"rotate"<<endl;
 		yRotationAngle = x - xdiff;
 		xRotationAngle = y + ydiff;
-		
+
 		glutPostRedisplay();
 	}
 	if (rightMouseDown){
@@ -182,22 +172,22 @@ void mouseMotion(int x, int y)
 
 void renderBitmapString(float x,float y,float z,void *font,char *string) {
 
-		char *c;
-		glRasterPos3f(x, y,z);
-		for (c=string; *c != '\0'; c++) {
-			glutBitmapCharacter(font, *c);
-		}
+	char *c;
+	glRasterPos3f(x, y,z);
+	for (c=string; *c != '\0'; c++) {
+		glutBitmapCharacter(font, *c);
+	}
 }
 void renderStrokeFontString(float x,float y,float z,void *font,char *string) {  
 
-		char *c;
-		glPushMatrix();
-		glTranslatef(x, y,z);
-		glScalef(0.002f, 0.002f, 0.002f);
-		for (c=string; *c != '\0'; c++) {
-			glutStrokeCharacter(font, *c);
-		}
-		glPopMatrix();
+	char *c;
+	glPushMatrix();
+	glTranslatef(x, y,z);
+	glScalef(0.002f, 0.002f, 0.002f);
+	for (c=string; *c != '\0'; c++) {
+		glutStrokeCharacter(font, *c);
+	}
+	glPopMatrix();
 }
 void restorePerspectiveProjection() {
 
@@ -286,7 +276,7 @@ void drawSky(void){
 void display (void) {
 	keyOperations();
 	specialKeyOperations();
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // Clear the background of our window to red
+//	glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // Clear the background of our window to red
 	glClear(GL_COLOR_BUFFER_BIT); //Clear the color buffer (more buffers later on)
 	glLoadIdentity(); // Load the Identity Matrix to reset our drawing locations
 	//gluLookAt(0, 0, -10, 0, 0, -1, 0, 1, 0);
@@ -297,13 +287,15 @@ void display (void) {
 	//glRotatef(yRotationAngle, 0.0f, 1.0f, 0.0f); // Rotate our object around the y axis
 	glRotatef(xRotationAngle, 1.0f, 0.0f, 0.0f);
 	glRotatef(yRotationAngle, 0.0f, 1.0f, 0.0f);
-
+	
 	//glColor3f(red,green,blue);
-	//glColor3f( 1.0f, 1.0f, 0.0f );
-	//glutSolidTeapot(20.0f);
+	glColor3f( 0.4f, 0.7f, 2.2f );
 	glPushMatrix();
-	drawSky();
+	glutSolidTeapot(20.0f);
 	glPopMatrix();
+	//glPushMatrix();
+	//drawSky();
+	//glPopMatrix();
 	// Draw X/Y/Z Lines
 	glPushMatrix();
 	glColor3f( 1.0f, 1.0f, 1.0f );
@@ -318,7 +310,7 @@ void display (void) {
 	glPopMatrix();
 
 	//glutSolidTeapot( 20.0f );
-	calcFPS();
+	//calcFPS();
 	//drawFPS();
 	//renderPrimitive(); // Render the primitive
 	//
@@ -356,11 +348,11 @@ void centerOnScreen ()
 
 void setupWindow(int argc, char* args[]){
 
-	 // Hide the mouse cursor
+	// Hide the mouse cursor
 	//GLUT Window Initialization
 	glutInit(&(argc),args);
 	glutInitDisplayMode(GLUT_RGBA|GLUT_DEPTH|GLUT_DOUBLE);
-	
+
 	glutInitWindowSize(width,height);
 	centerOnScreen ();
 	glutInitWindowPosition(window_x ,window_y);
@@ -370,14 +362,14 @@ void setupWindow(int argc, char* args[]){
 	//register callback
 	glutDisplayFunc(display);
 	glutReshapeFunc(reshape);
-	//glutIdleFunc(display);
+	glutIdleFunc(display);
 	glutKeyboardFunc(pressNormalKeys);
 	glutKeyboardUpFunc(releaseNormalKeys);
 	glutSpecialFunc(pressSpecialKeys);
 	glutSpecialUpFunc(releaseSpecialKeys);
 	glutMouseFunc(mouse);
 	glutMotionFunc(mouseMotion);
-	
+
 	// OpenGL init
 	//glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
@@ -396,7 +388,7 @@ void setupGLFWwindow(){
 	glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR,3);
 	glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR,3);
 	glfwOpenWindowHint(GLFW_OPENGL_PROFILE,GLFW_OPENGL_CORE_PROFILE);
-	
+
 	// Open a window and create its OpenGL context
 	if( !glfwOpenWindow( width, height, 0,0,0,0, 32,0, GLFW_WINDOW ) ){
 		fprintf( stderr, "Failed to open GLFW window\n" );
@@ -411,7 +403,7 @@ void setupGLFWwindow(){
 	//glfwEnable(GLFW_STICKY_MOUSE_BUTTONS);
 	//glfwDisable(GLFW_MOUSE_CURSOR);
 	do{
-		 glfwSwapBuffers();
+		glfwSwapBuffers();
 	}
 	while(glfwGetKey(GLFW_KEY_ESC)!= GLFW_PRESS && glfwGetWindowParam(GLFW_OPENED));
 }
@@ -427,7 +419,7 @@ int main( int argc, char* args[] ){
 	string input, buffer, filename;
 	ofstream myfile;
 	cout << "Welcome to skyGesture Application.\nThis program requires a .cvs file.\nPlease note that it has to be in the same directory as this executable.\n"<<endl;
-	
+
 	short col = 0; // Which column am i in max 4: x, y, z, classification
 	string temp; // to hold and devide the lines from the file
 	char *tempArr;
@@ -482,6 +474,7 @@ int main( int argc, char* args[] ){
 			}
 			point_count++;
 		}
+
 		cout << "Read in " << point_count << " points" << endl;
 		file.close();
 		cout << "File has been closed" << endl;
@@ -496,20 +489,35 @@ int main( int argc, char* args[] ){
 	}
 	else
 		cout << "Unable to open file" << endl;
-	
+
+	g_vertex_LIDAR = new GLdouble[point_count*3];
+	int counter = 0;
+	for(int k =0; k<point_count*3-3;k+=3){
+		cout<<"Loop is at: " << k << "counter is at: "<<counter<<endl;
+		cout<<xcor[counter]<<","<<ycor[counter]<<","<<zcor[counter]<<endl;
+		g_vertex_LIDAR[k] =xcor[counter] ;
+		g_vertex_LIDAR[k+1] = ycor[counter];
+		g_vertex_LIDAR[k+1] = zcor[counter];
+		counter++;
+
+	}
 
 	cout << "Type in 'glut' to start using GLUT Library or 'glfw' to use GLFW Library"<< endl;
 	do{
 		cout << ">>";
 		getline(cin, input);
 		if(input.compare("glut")==0){
-			
+
 			setupWindow(argc,args);
 		}
 		if(input.compare("glfw")==0){
-			Draw *glfw = new Draw();
+			Draw *glfwWindow = new Draw();
+			glfwWindow->draw(Draw::test);
+
+			//glfwWindow->drawLIDAR(&g_vertex_LIDAR);
+			glfwTerminate();
 		}
 	} while(input.compare("quit") != 0);
-
+	delete g_vertex_LIDAR;
 	return 0;    
 }
