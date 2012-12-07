@@ -1,4 +1,4 @@
-﻿Build started 12/1/2012 5:06:17 PM.
+﻿Build started 12/4/2012 8:32:48 PM.
      1>Project "C:\Users\jle33\Documents\Visual Studio 2010\Projects\OpenNI_SkyGest\OpenNI_SkyGest\OpenNI_SkyGest.vcxproj" on node 2 (build target(s)).
      1>InitializeBuildStatus:
          Creating "Release\OpenNI_SkyGest.unsuccessfulbuild" because "AlwaysCreate" was specified.
@@ -23,4 +23,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:02.04
+Time Elapsed 00:00:03.33
